@@ -490,13 +490,13 @@ async def cmd_admin(message: types.Message):
         reply_markup=get_admin_keyboard()
     )
 
-# Обработчик команды /unadmin для удаления прав администратора
-@dp.message(Command("unadmin"))
+# Обработчик команды /unadmin и /unadm для удаления прав администратора
+@dp.message(Command("unadmin", "unadm"))
 async def cmd_unadmin(message: types.Message):
     """Удаляет пользователя из списка администраторов."""
     user_id = message.from_user.id
     
-    logger.info(f"Пользователь {user_id} выполнил команду /unadmin")
+    logger.info(f"Пользователь {user_id} выполнил команду для удаления из администраторов")
     
     # Проверяем, является ли пользователь администратором
     cursor.execute("SELECT 1 FROM admins WHERE user_id = ?", (user_id,))
