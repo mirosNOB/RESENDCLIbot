@@ -240,6 +240,7 @@ async def handle_feedback_message(message: types.Message, state: FSMContext):
     # Создаем клавиатуру для ответа на сообщение
     reply_kb = InlineKeyboardBuilder()
     reply_kb.add(InlineKeyboardButton(text="✏️ Ответить", callback_data=f"reply_{feedback_id}"))
+    reply_kb.add(InlineKeyboardButton(text="🗑️ Удалить", callback_data=f"delete_{feedback_id}"))
     
     for admin in admins:
         admin_id = admin[0]
@@ -323,6 +324,7 @@ async def show_recent_messages(message: types.Message):
             # Создаем клавиатуру для каждого сообщения
             kb = InlineKeyboardBuilder()
             kb.add(InlineKeyboardButton(text="✏️ Ответить", callback_data=f"reply_{msg_id}"))
+            kb.add(InlineKeyboardButton(text="🗑️ Удалить", callback_data=f"delete_{msg_id}"))
             
             await message.answer(
                 f"📨 Сообщение #{msg_id}:\n"
@@ -551,6 +553,23 @@ async def process_reply_button(callback_query: types.CallbackQuery, state: FSMCo
     else:
         logger.error(f"Сообщение ID {feedback_id} не найдено в базе данных")
         await callback_query.message.answer("❌ Сообщение не найдено.")
+
+# Обработчик нажатия на кнопку удаления сообщения
+@dp.callback_query(lambda c: c.data and c.data.startswith('delete_'))
+async def process_delete_button(callback_query: types.CallbackQuery):
+    """Обрабатывает нажатие на кнопку удаления сообщения."""
+    await callback_query.answer()
+    
+    # Получаем ID сообщения из callback_data
+    feedback_id = int(callback_query.data.split('_')[1])
+    logger.info(f"Запрошено удаление сообщения ID: {feedback_id}")
+    
+    # Удаляем сообщение из базы данных
+    cursor.execute("DELETE FROM feedback WHERE id = ?", (feedback_id,))
+    conn.commit()
+    logger.info(f"Сообщение ID {feedback_id} удалено из базы данных")
+    
+    await callback_query.message.answer(f"✅ Сообщение #{feedback_id} удалено.")
 
 # Обработчик ввода текста ответа
 @dp.message(StateFilter(BotStates.waiting_for_reply))
